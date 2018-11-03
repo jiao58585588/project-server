@@ -1,0 +1,23 @@
+
+//
+{
+  "name": "jiao",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start":"nodemon app.js"
+  },
+  //在此设置的start启动项目只要执行npm start就可以自动检测代码的修改，只需刷新页面就能看到代码修改后的效果
+  //默认启动项目2种方式：1.页面右击start 2.在Terminal中输入要起动的项目（nodemon app.js）
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "mongoose": "^5.3.8"
+  },
+  "devDependencies": {
+    "blueimp-md5": "^2.10.0"
+  }
+}
