@@ -12,7 +12,7 @@ const router=require('./router');
 })*/
 
 (async ()=>{
-    await db;
+    await db
     app.use(router);
 })();
 app.listen(4000,err=>{

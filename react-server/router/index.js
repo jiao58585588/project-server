@@ -6,10 +6,10 @@ const  express=require('express');
 const Router=express.Router;
 const router=new Router();
 const Users=require('../models/users');
+const cookieParser=require('cookie-parser');
 const md5=require('blueimp-md5');
-const cookirParser=require('cookie-parser');
-router.use(express.urlencoded({extended:true}));
 router.use(cookieParser());
+router.use(express.urlencoded({extended:true}));
 router.post('/register',async (req,res)=> {
     //收集用户信息
     const {username, password, type} = req.body;
@@ -32,7 +32,7 @@ router.post('/register',async (req,res)=> {
         } else {
             //注册成功 将用户信息保存在数据库中 不能用passward的简写方式
             const result =await Users.create({username, password: md5(password), type})
-            res.cookie('userId',data.id,{maxAge:1000*3600*24*7});
+            res.cookie('userId',result.id,{maxAge:1000*3600*24*7});
             res.json({  //将json数组/对象转换成字符串,仔细琢磨下
                 code: 0,
                 data: {
@@ -67,6 +67,7 @@ router.post('/login',async (req,res)=>{
                 'msg': '用户名或密码错误'
             });
         }else{
+            res.cookie('userId',data.id,{maxAge:1000*3600*24*7});
             res.json({  //将json数组/对象转换成字符串,仔细琢磨下
                 code: 0,
                 data: {
@@ -83,12 +84,38 @@ router.post('/login',async (req,res)=>{
         });
     }
 })
-router.post('/update',(req,res)=> {
-  const id = req.cookies.userId;
-  if (!id) {
-    return req.json({code: 0, msg: '请先登录'});
-  }
-  const user=req.body;
-  Users.findByIdAndUpdate({_id:user},(err,data))
-})
+router.post('/update',(req,res)=>{
+    const userId=req.cookies.userId;
+    if(!userId){
+       return res.json({
+            'code':1,
+            'msg': '请先登录'
+        });
+    }
+        const user=req.body;
+        Users.findOne({_id:userId,user})
+            .then(oldUser=> {
+                if(!oldUser){
+                    res.clearCookie('userId');
+                    res.json({
+                        code:0,
+                        msg:'请先登陆'
+                    })
+                }else{
+                    const {_id,username,type}=oldUser;
+                    const data=Object.assign({_id,username,type},user);
+                    res.json({
+                        code:0,
+                        data
+                    })
+                }
+
+            })
+            .catch(rej=>{
+                res.send({
+                    'code':3,
+                    'msg': '网络不稳定，请刷新重试'
+                });
+            })
+    })
 module.exports=router;
