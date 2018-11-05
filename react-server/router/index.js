@@ -6,6 +6,7 @@ const md5 = require('blueimp-md5');
 const cookieParser = require('cookie-parser');
 //引入Users
 const Users = require('../models/users');
+const Messages = require('../models/messages');
 //获取Router
 const Router = express.Router;
 //创建路由器对象
@@ -39,7 +40,7 @@ router.post('/register',async (req,res)=> {
         } else {
             //注册成功 将用户信息保存在数据库中 不能用passward的简写方式
             const result =await Users.create({username, password: md5(password), type})
-            res.cookie('userId',result.id,{maxAge:1000*3600*24*7});
+            res.cookie('userid',result.id,{maxAge:1000*3600*24*7});
             res.json({  //将json数组/对象转换成字符串,仔细琢磨下
                 code: 0,
                 data: {
@@ -75,7 +76,7 @@ router.post('/login',async (req,res)=>{
                 'msg': '用户名或密码错误'
             });
         }else{
-            res.cookie('userId',data.id,{maxAge:1000*3600*24*7});
+            res.cookie('userid',data.id,{maxAge:1000*3600*24*7});
             res.json({  //将json数组/对象转换成字符串,仔细琢磨下
                 code: 0,
                 data
@@ -149,6 +150,7 @@ router.get('/user', (req, res) => {
       res.send({code: 3, msg: '网络不稳定，请重新试试~'})
     })
 })
+//获取用户列表的路由
 router.get('/userList',(req,res)=>{
   const {type}=req.query;
   Users.find({type},filter)
@@ -165,6 +167,40 @@ router.get('/userList',(req,res)=>{
         msg:'获取用户信息失败，请重新尝试'
       })
     })
+})
+//获取聊天消息的路由
+router.get('/msglist',async (req,res)=>{
+  const {userid}=req.cookies;
+  if(!userid){
+    res.json({
+      code:3,
+      msg:'请先登录'
+    });
+    return;
+  }
+  try{
+    const chatMsgs=await Messages.find({$or:[{from:userid},{to:userid}]},{__v:0});
+    const result=await Users.find();
+    let users=[];
+    chatMsgs.forEach(item=>{
+      users[item._id]={
+        username:item.username,
+        header:item.header
+      }
+    })
+    res.json({
+      code:0,
+      data:{
+        users,
+        chatMsgs
+      }
+    })
+  }catch(e){
+    res.json({
+      code:3,
+      msg:'网络不稳定，请重新试试'
+    })
+  }
 })
 //暴露出去
 module.exports = router;
